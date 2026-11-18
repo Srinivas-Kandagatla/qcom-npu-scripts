@@ -15,12 +15,36 @@ Both scripts self-clone anything they need under `$WORK` (default
 
 ## 1. Install firmware
 
-### Host requirements
+### Host dependencies
+
+| Tool | Debian / Ubuntu | Fedora / RHEL | Arch |
+| --- | --- | --- | --- |
+| CAB extraction | `p7zip-full` | `p7zip p7zip-plugins` | `p7zip` |
+| MSI tooling | `msitools` | `msitools` | `msitools` |
+| File typing | `file` | `file` | `file` |
+| Payload scan | `python3` | `python3` | `python` |
+| Zip wrapper | `unzip` | `unzip` | `unzip` |
+| Fetch / sync | `curl rsync openssh-client` | `curl rsync openssh-clients` | `curl rsync openssh` |
+| Auto-clone | `git` | `git` | `git` |
+| YAML schema check (optional) | `python3-yamale` | `python3-yamale` (EPEL) or `pip install yamale` | AUR `python-yamale` |
+
+One-liners:
 
 ```bash
+# Debian / Ubuntu
 sudo apt install --no-install-recommends \
      p7zip-full msitools file python3 unzip \
      curl rsync openssh-client git
+
+# Fedora / RHEL (CoreOS: use rpm-ostree instead)
+sudo dnf install -y \
+     p7zip p7zip-plugins msitools file python3 unzip \
+     curl rsync openssh-clients git
+
+# Arch
+sudo pacman -S --needed \
+     p7zip msitools file python unzip \
+     curl rsync openssh git
 ```
 
 ### Usage
@@ -28,7 +52,7 @@ sudo apt install --no-install-recommends \
 ```bash
 chmod +x install-firmware.sh
 
-# host-only: stage everything under /tmp/qcom-npu-fw/
+# host-only: stage everything under /tmp/qcom-npu-fw/root
 ./install-firmware.sh
 
 # full deploy to a target
@@ -40,14 +64,23 @@ The script:
 1. Downloads [Qualcomm_Hexagon_NPU_Driver-v1.3.1.0.zip](https://softwarecenter.qualcomm.com/api/download/software/tools/Qualcomm_HND/Windows/ARM64/1.3.1.0/Qualcomm_Hexagon_NPU_Driver-v1.3.1.0.zip).
 2. Clones <https://github.com/Srinivas-Kandagatla/installer-extract> and runs
    `wix-burn-extract.sh` to carve the installer's `WixAttachedContainer` and
-   peel each MSI back to real filenames.
+   peel each MSI back to real filenames. (The extractor now identifies MSIs
+   by OLE2 magic, so it works on Debian AND Fedora — earlier releases only
+   matched Debian's `file(1)` wording.)
 3. SSHes into the target, reads `/sys/firmware/devicetree/base/model`, and
    maps it to a per-OEM firmware subdir.
 4. Deploys:
-   - signed firmware → `/lib/firmware/<fw_subdir>/`
-   - DSP userspace shared objects → `/usr/share/qcom/<fw_subdir>/`
-   - master fastrpc YAML → `/usr/share/qcom/conf.d/50-qcom-laptops.yaml`
+   - signed firmware → `/lib/firmware/qcom/<soc>/<OEM>/<model>/` (CRD/QCP
+     boards also get a `cdsp.mbn` symlink to the SoC's `qccdsp*.mbn`)
+   - DSP userspace shared objects → `/usr/share/hexagon-dsp/<soc>/dsp/cdsp/`
+     (shared across every OEM board on that SoC family)
+   - master fastrpc YAML → `/usr/share/hexagon-dsp/conf.d/50-qcom-laptops.yaml`
 5. Tells you to reboot.
+
+> **Note**: fastrpc's compiled-in config dir is `/usr/share/qcom/conf.d/`.
+> If you ship `conf.d/` under `/usr/share/hexagon-dsp/` instead, either
+> symlink `/usr/share/qcom -> /usr/share/hexagon-dsp` on the target or
+> override `QCOM_SHARE=/usr/share/qcom` when running the script.
 
 ### Supported machines
 
@@ -75,16 +108,43 @@ with matching entries.
 | `FASTRPC_REPO` | `https://github.com/quic/fastrpc` | fastrpc repo (for optional YAML schema) |
 | `FASTRPC_DIR` | `$WORK/fastrpc` | Where fastrpc is cloned |
 | `TARGET` | *(unset)* | SSH destination; unset = host-only |
-| `QCOM_SHARE` | `/usr/share/qcom` | Target DSP userspace root |
+| `STAGE` | *(unset)* | Local staging root; unset + no TARGET = `$WORK/root` |
+| `MACHINE` | `all` in STAGE mode, DT-detected in TARGET mode | Which board to install for |
+| `QCOM_SHARE` | `/usr/share/hexagon-dsp` | Target DSP userspace root |
 | `YAML_NAME` | `50-qcom-laptops.yaml` | fastrpc config filename |
+| `SOC_TREE` | auto from `MACHINE` | `8380` (V73, X Elite 1) or `8480` (V81, X Elite 2) |
 
 ## 2. Build + deploy llama.cpp
 
-### Host requirements
+### Host dependencies
+
+Docker + amd64 QEMU user-mode (the Snapdragon toolchain image is x86_64,
+run under emulation on an arm64 host). The script installs these for you on
+first run if the `alpine --platform linux/amd64` smoke test fails.
+
+| Tool | Debian / Ubuntu | Fedora / RHEL | Arch |
+| --- | --- | --- | --- |
+| Docker | `docker.io` | `moby-engine` (or Docker CE from docker.com) | `docker` |
+| amd64 QEMU | `qemu-user-static binfmt-support` | `qemu-user-static` | `qemu-user-static binfmt-support` |
+| Git / rsync / ssh | `git rsync openssh-client` | `git rsync openssh-clients` | `git rsync openssh` |
+
+Manual install if you'd rather not let the script run `sudo`:
 
 ```bash
+# Debian / Ubuntu
 sudo apt install docker.io qemu-user-static binfmt-support git rsync openssh-client
+
+# Fedora / RHEL
+sudo dnf install moby-engine qemu-user-static git rsync openssh-clients
+sudo systemctl enable --now docker
+
+# Arch
+sudo pacman -S --needed docker qemu-user-static binfmt-support git rsync openssh
+sudo systemctl enable --now docker
 ```
+
+Add yourself to the `docker` group (`sudo usermod -aG docker $USER` + re-login)
+or prefix the script with `sudo`.
 
 ### Usage
 

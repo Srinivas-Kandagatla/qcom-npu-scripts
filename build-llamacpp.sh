@@ -31,11 +31,31 @@ need docker
 # ---------------------------------------------------------------------------
 # 1. register amd64 binfmt handler if the host is arm64 (one-time)
 # ---------------------------------------------------------------------------
+install_binfmt_pkgs() {
+    if command -v apt >/dev/null 2>&1; then
+        sudo apt install -y docker.io qemu-user-static binfmt-support
+    elif command -v dnf >/dev/null 2>&1; then
+        # Fedora: moby-engine is the stock docker; qemu-user-static covers the
+        # binfmt handlers.  systemd-binfmt provides the registration bits.
+        sudo dnf install -y moby-engine qemu-user-static systemd-udev
+        sudo systemctl enable --now docker
+    elif command -v zypper >/dev/null 2>&1; then
+        sudo zypper install -y docker qemu-linux-user
+        sudo systemctl enable --now docker
+    elif command -v pacman >/dev/null 2>&1; then
+        sudo pacman -S --needed --noconfirm docker qemu-user-static binfmt-support
+        sudo systemctl enable --now docker
+    else
+        echo "ERROR: unknown distro — install docker + qemu-user-static manually" >&2
+        exit 1
+    fi
+}
+
 echo "[1/4] Checking x86_64 Docker emulation"
 if ! docker run --rm --platform linux/amd64 alpine uname -m 2>/dev/null \
      | grep -q x86_64; then
     echo "       registering amd64 binfmt handler via tonistiigi/binfmt"
-    sudo apt install -y docker.io qemu-user-static binfmt-support
+    install_binfmt_pkgs
     sudo docker run --privileged --rm tonistiigi/binfmt --install amd64
 fi
 
