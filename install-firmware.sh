@@ -32,7 +32,7 @@ FASTRPC_DIR="${FASTRPC_DIR:-$WORK/fastrpc}"
 TARGET="${TARGET:-}"
 STAGE="${STAGE:-}"                          # local staging root (dry-run); unset = normal
 
-QCOM_SHARE="${QCOM_SHARE:-/usr/share/qcom}"
+QCOM_SHARE="${QCOM_SHARE:-/usr/share/hexagon-dsp}"
 YAML_NAME="${YAML_NAME:-50-qcom-laptops.yaml}"
 
 # ---------------------------------------------------------------------------
