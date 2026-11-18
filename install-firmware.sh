@@ -76,13 +76,13 @@ model_to_fw_subdir() {
 model_to_dsp_subdir() {
     case "$1" in
         *Glymur*|"ASUS Zenbook A16 (UX3607OA)"|"HP EliteBook X G2q 14 AI"|"Lenovo Yoga Slim 7x Gen 11")
-            echo "glymur" ;;
+            echo "glymur/dsp/cdsp" ;;
         *Mahua*|"Lenovo ThinkPad T14s Gen 7 (LCD)")
-            echo "mahua" ;;
+            echo "mahua/dsp/cdsp" ;;
         *Kolambo*)
-            echo "kolambo" ;;
+            echo "kolambo/dsp/cdsp" ;;
         *X1E80100*|*X1E001DE*|"ASUS Vivobook S 15"|"ASUS Zenbook A14 (UX3407RA)"|Dell*|HONOR*|"HP EliteBook Ultra G1q"|"HP Omnibook X 14-fe0"|"Lenovo Yoga Slim 7x"|"Medion SPRCHRGD 14 S1")
-            echo "x1e80100" ;;
+            echo "x1e80100/dsp/cdsp" ;;
         *) return 1 ;;
     esac
 }
@@ -109,6 +109,8 @@ write_master_yaml() {
         echo "machines:"
         for m in "${ALL_MACHINES[@]}"; do
             dsp="$(model_to_dsp_subdir "$m")" || continue
+            # drop only the trailing "/cdsp" — fastrpc looks at <family>/dsp/
+            dsp="${dsp%/cdsp}"
             echo "  $m:"
             echo "    DSP_LIBRARY_PATH: $dsp"
         done
@@ -207,17 +209,9 @@ SCHEMA="$FASTRPC_DIR/Docs/schemas/fastrpc-config-schema.yaml"
 # 2. pick machine(s) + install
 # ---------------------------------------------------------------------------
 if [[ -z "$TARGET" && -z "$STAGE" ]]; then
-    cat <<EOF
-[5/5] Neither TARGET nor STAGE set; stopping after extract.
-       Staged under: $WORK
-       Options:
-         STAGE=/some/dir MACHINE=all       $0   # lay out every known board
-         STAGE=/some/dir MACHINE="<model>" $0   # single board
-         TARGET=root@<board>               $0   # auto-detect + deploy
-EOF
-    exit 0
+    STAGE="$WORK/root"
+    echo "       (no TARGET/STAGE set — staging to $STAGE)"
 fi
-
 # default MACHINE=all when staging (handy for creating a fleet image)
 : "${MACHINE:=all}"
 if [[ "$MACHINE" == "all" ]]; then
