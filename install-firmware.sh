@@ -65,7 +65,12 @@ model_to_fw_subdir() {
         "HP EliteBook Ultra G1q")                   echo "qcom/x1e80100/hp/elitebook-ultra-g1q" ;;
         "HP Omnibook X 14-fe0")                     echo "qcom/x1e80100/hp/omnibook-x14" ;;
         "Lenovo Yoga Slim 7x")                      echo "qcom/x1e80100/LENOVO/83ED" ;;
+        "Lenovo ThinkPad T14s Gen 6 (LCD)")         echo "qcom/x1e80100/LENOVO/21N1" ;;
+        "Lenovo ThinkPad T14s Gen 6 (OLED)")        echo "qcom/x1e80100/LENOVO/21N1" ;;
         "Medion SPRCHRGD 14 S1")                    echo "qcom/x1e80100/Medion/sprchrgd-14-s1" ;;
+        "Microsoft Surface Laptop 7 (13.8 inch)")   echo "qcom/x1e80100/microsoft/Romulus" ;;
+        "Microsoft Surface Laptop 7 (15 inch)")     echo "qcom/x1e80100/microsoft/Romulus" ;;
+        "Microsoft Surface Pro 11th Edition (OLED)") echo "qcom/x1e80100/microsoft/Denali" ;;
         *) return 1 ;;
     esac
 }
@@ -81,7 +86,7 @@ model_to_dsp_subdir() {
             echo "mahua/dsp/cdsp" ;;
         *Kolambo*)
             echo "kolambo/dsp/cdsp" ;;
-        *X1E80100*|*X1E001DE*|"ASUS Vivobook S 15"|"ASUS Zenbook A14 (UX3407RA)"|Dell*|HONOR*|"HP EliteBook Ultra G1q"|"HP Omnibook X 14-fe0"|"Lenovo Yoga Slim 7x"|"Medion SPRCHRGD 14 S1")
+        *X1E80100*|*X1E001DE*|"ASUS Vivobook S 15"|"ASUS Zenbook A14 (UX3407RA)"|Dell*|HONOR*|"HP EliteBook Ultra G1q"|"HP Omnibook X 14-fe0"|"Lenovo Yoga Slim 7x"|"Lenovo ThinkPad T14s Gen 6 (LCD)"|"Lenovo ThinkPad T14s Gen 6 (OLED)"|"Medion SPRCHRGD 14 S1"|Microsoft*)
             echo "x1e80100/dsp/cdsp" ;;
         *) return 1 ;;
     esac
@@ -94,7 +99,7 @@ model_to_soc_tree() {
     case "$1" in
         *Glymur*|*Mahua*|*Kolambo*|"ASUS Zenbook A16 (UX3607OA)"|"HP EliteBook X G2q 14 AI"|"Lenovo Yoga Slim 7x Gen 11"|"Lenovo ThinkPad T14s Gen 7 (LCD)")
             echo "8480" ;;
-        *X1E80100*|*X1E001DE*|"ASUS Vivobook S 15"|"ASUS Zenbook A14 (UX3407RA)"|Dell*|HONOR*|"HP EliteBook Ultra G1q"|"HP Omnibook X 14-fe0"|"Lenovo Yoga Slim 7x"|"Medion SPRCHRGD 14 S1")
+        *X1E80100*|*X1E001DE*|"ASUS Vivobook S 15"|"ASUS Zenbook A14 (UX3407RA)"|Dell*|HONOR*|"HP EliteBook Ultra G1q"|"HP Omnibook X 14-fe0"|"Lenovo Yoga Slim 7x"|"Lenovo ThinkPad T14s Gen 6 (LCD)"|"Lenovo ThinkPad T14s Gen 6 (OLED)"|"Medion SPRCHRGD 14 S1"|Microsoft*)
             echo "8380" ;;
         *) return 1 ;;
     esac
@@ -235,7 +240,12 @@ if [[ "$MACHINE" == "all" ]]; then
         "HP EliteBook Ultra G1q"
         "HP Omnibook X 14-fe0"
         "Lenovo Yoga Slim 7x"
+        "Lenovo ThinkPad T14s Gen 6 (LCD)"
+        "Lenovo ThinkPad T14s Gen 6 (OLED)"
         "Medion SPRCHRGD 14 S1"
+        "Microsoft Surface Laptop 7 (13.8 inch)"
+        "Microsoft Surface Laptop 7 (15 inch)"
+        "Microsoft Surface Pro 11th Edition (OLED)"
     )
 else
     ALL_MACHINES=("$MACHINE")
